@@ -1,12 +1,21 @@
 //code by bitluni (send me a high five if you like the code)
 #include "esp_pm.h"
-
 #include "CompositeGraphics.h"
 #include "Image.h"
 #include "CompositeOutput.h"
 
 #include "luni.h"
 #include "font6x8.h"
+
+#define RXD2 16 // Connect the C3's TX pin to this pin!
+#define TXD2 17 // (We won't actually send anything back to the C3, but Serial2 needs it defined)
+
+#define BOOT_BUTTON 0  // The built-in BOOT button on the ESP32
+
+// Button tracking variables
+bool lastButtonState = HIGH;
+unsigned long lastPressTime = 0;
+// The master scene controller
 
 //PAL MAX, half: 324x268 full: 648x536
 //NTSC MAX, half: 324x224 full: 648x448
@@ -39,11 +48,15 @@ int j = 0;
 int scene = 0;
 String customSerialText = "WAITING FOR SERIAL...";
 
+
 void setup() {
   // 1. Initialize Serial Communication at 115200 baud rate
   Serial.begin(115200);
   Serial.println("ESP32 Composite Video Started!");
   Serial.println("Type 'scene 0' or 'scene 1' to change scenes, or type a custom message.");
+  Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
+  // button state
+  pinMode(BOOT_BUTTON, INPUT_PULLUP);
 
   //highest clockspeed needed
   esp_pm_lock_handle_t powerManagementLock;
@@ -59,6 +72,7 @@ void setup() {
 
   //running composite output pinned to first core
   xTaskCreatePinnedToCore(compositeCore, "compositeCoreTask", 1024, NULL, 1, NULL, 0);
+
 }
 
 void compositeCore(void *data) {
@@ -82,8 +96,8 @@ void handleSerial_debug() {
 }
 
 void handleSerial() {
-  if (Serial.available() > 0) {
-    String input = Serial.readStringUntil('\n');
+  if (Serial2.available() > 0) {
+    String input = Serial2.readStringUntil('\n');
     input.trim();
 
     if (input.length() > 0) {
@@ -383,6 +397,21 @@ void draw() {
         }
         break;
       }
+
+    case 'F':
+      {
+        // THE NEW WEB TEXT SCENE
+        // We use the same paramSize logic from your MIDI fader to scale it!
+        graphics.setCursor(10, 10);
+        if (paramSize > 4) {
+          graphics.printBig((char *)displayText.c_str(), paramSize);
+        } else {
+          graphics.print((char *)displayText.c_str());
+        }
+        break;
+      }
+
+
     default:
       graphics.setCursor(10, 10);
       graphics.setTextColor(fgColor, bgColor);
@@ -395,8 +424,22 @@ void draw() {
 void loop() {
   // Check for serial input every loop
   // handleSerial_debug();
+  // server.handleClient();
   handleSerial();
-  // Serial.println(currentScene);
+
+
+  // button press control code
+  // bool currentButtonState = digitalRead(BOOT_BUTTON);
+
+  // if (currentButtonState == LOW && lastButtonState == HIGH && (millis() - lastPressTime > 250)) {
+  //   currentScene++;  // Move to the next letter (A becomes B, B becomes C...)
+  //   if (currentScene > 'F') {
+  //     currentScene = 'A';
+  //   }
+  //   lastPressTime = millis();  // Reset the debounce timer
+  // }
+  // lastButtonState = currentButtonState;  // Remember the state for the next frame
+
   // Draw the graphics
   draw();
 }
