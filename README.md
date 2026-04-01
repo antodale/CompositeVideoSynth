@@ -58,6 +58,19 @@ You can now click the radio buttons in the Pure Data patch to switch between sce
 * **Shape:** Morphs the geometry (e.g., changing a cube into a pyramid, or altering the tunnel angle).
 * **Multiply:** Increases the density of the scene, such as adding more stars to the starfield or creating a larger grid of 3D shapes.
 
+### Adding wireless connection with a second server board
+If you want to use the system as possible signage, i now implemented the possibility to set the desired screen or text with several parameters and setting through wireless connection. For this you need a second esp32 (running everything on a single board makes the video very laggy).
+You need upload the code in VideoSynth_ServerC3 (I used a ESP32-C3 board) to your board of choice. To connect the two boards together, you connect the following pins:
+
+
+
+You should only power through usb ONE board, since the voltage is then passed to the other one via pins connection.
+
+You can now use your phone or laptop to interact with the scenes, turn off your data, connect to the network: COMPOSITE_SYNTH_UPLINK, go into a browser and type the following IP: 192.168.4.1
+This screen should appear:
+
+
+
 ### Adding Physical MIDI Control
 If you want to step away from the mouse and use physical hardware faders:
 1. Plug your USB MIDI controller into your computer and select it in Pure Data's `Media > MIDI Settings` menu.
