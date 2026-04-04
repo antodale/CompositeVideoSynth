@@ -18,7 +18,7 @@ To get this project running, you will need:
 * **A Display:** A vintage CRT television or any monitor with an analog composite video input.
 * **A MIDI Controller (Optional but recommended):** For tactile, hands-on control of the visual parameters.
 
-*Note: You will need to wire the specific composite video output pin (pin 21) of your ESP32 to the center pin of the RCA cable, and connect the grounds together. Please refer to the Bitluni Composite Video documentation for the safest resistor/DAC wiring schematic for your specific board.*
+*Note: You will need to wire the specific composite video output pin (pin 25) of your ESP32 to the center pin of the RCA cable, and connect the grounds together. Please refer to the Bitluni Composite Video documentation for the safest resistor/DAC wiring schematic for your specific board.*
 
 ## Software Dependencies
 
