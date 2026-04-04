@@ -1,50 +1,46 @@
-//code by bitluni (send me a high five if you like the code)
-#include "esp_pm.h"
-#include "CompositeGraphics.h"
-#include "Image.h"
-#include "CompositeOutput.h"
+#include <Arduino.h>
 
-#include "luni.h"
-#include "font6x8.h"
+//code by bitluni (send me a high five if you like the code)
+#include <esp_pm.h>             // System file -> Angle brackets
+#include <CompositeGraphics.h>  // In the 'lib' folder -> Angle brackets
+#include <CompositeOutput.h>    // In the 'lib' folder -> Angle brackets
+#include "font6x8.h"            // Local file in 'src' -> Quotes
 
 #define RXD2 16 // Connect the C3's TX pin to this pin!
 #define TXD2 17 // (We won't actually send anything back to the C3)
-
-
 
 //PAL MAX, half: 324x268 full: 648x536
 //NTSC MAX, half: 324x224 full: 648x448
 const int XRES = 320;
 const int YRES = 225;
-String displayText = "INIT";
+String displayText = "REBOOT_\nTHE_RISE\n_OF_THE_\nROBOTS";
 
 //Graphics using the defined resolution for the backbuffer
 CompositeGraphics graphics(XRES, YRES);
 CompositeOutput composite(CompositeOutput::NTSC, XRES * 2, YRES * 2);
-
-Image<CompositeGraphics> luni0(luni::xres, luni::yres, luni::pixels);
 Font<CompositeGraphics> font(6, 8, font6x8::pixels);
 
 #include <soc/rtc.h>
-char currentScene = 'C';
+char currentScene = 'F';
 
 // --- NOW ACCEPTING 0 to 127 ---
 int paramBg = 0;     
-int paramSize = 64;   
-int paramSpeed = 64;  
-int paramShape = 64;  
-int paramMulti = 64;  
+int paramSize = 79;   
+int paramSpeed = 0;  
+int paramShape = 111;  
+int paramMulti = 0;  
 
 int t = millis();
 int j = 0;
 int scene = 0;
+
+void compositeCore(void *data);
 
 void setup() {
   Serial.begin(115200);
   Serial.println("ESP32 Composite Video Started!");
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
   
-
   esp_pm_lock_handle_t powerManagementLock;
   esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "compositeCorePerformanceLock", &powerManagementLock);
   esp_pm_lock_acquire(powerManagementLock);
@@ -71,25 +67,19 @@ void handleSerial() {
 
     // The shortest possible valid packet (Mode + 5 padded sliders) is 16 chars.
     if (len >= 16) {
-      // 1. Grab the Mode
       currentScene = input.charAt(0);
-
-      // 2. The sliders are ALWAYS the last 15 characters. Find where they start.
       int s1Start = len - 15;
 
-      // 3. If there is a gap between Mode (index 1) and Sliders, that gap is the text!
       if (s1Start > 1) {
         displayText = input.substring(1, s1Start);
       }
 
-      // 4. Extract the exact 3-digit blocks
       paramBg    = input.substring(s1Start, s1Start + 3).toInt();
       paramSize  = input.substring(s1Start + 3, s1Start + 6).toInt();
       paramSpeed = input.substring(s1Start + 6, s1Start + 9).toInt();
       paramShape = input.substring(s1Start + 9, s1Start + 12).toInt();
       paramMulti = input.substring(s1Start + 12, s1Start + 15).toInt();
 
-      // Debugging print
       Serial.print("message recieved: "); Serial.println(input);
       Serial.print("TEXT: "); Serial.println(displayText);
       Serial.printf("SLIDERS: Bg:%d, Size:%d, Spd:%d, Shp:%d, Mlt:%d\n", 
@@ -114,52 +104,128 @@ void draw() {
       }
       break;
 
-    // --- SCENE B: CASCADING TEXT ---
+// --- SCENE E: CASCADING TEXT ---
     case 'E':
       {
-        // Map high-res data back to safe limits
-        int numLines = map(paramMulti, 0, 127, 1, 10);                 
-        float cascadeSpeed = map(paramSpeed, 0, 127, 1, 10) * 0.05;  
-        int rowHeight = (paramSize > 64) ? 16 : 8;
-        int totalRows = YRES / rowHeight;
+        // 1. DYNAMIC SIZE (Slider 2: paramSize)
+        int scaleFactor = map(paramSize, 0, 127, 1, 9);
+        if (scaleFactor < 1) scaleFactor = 1;
+        int rowSpacing = 9 * scaleFactor; // Pixel height per line
+        
+        // 2. CALCULATE TOTAL BLOCK HEIGHT
+        int textLines = 1;
+        for (int i = 0; i < displayText.length(); i++) {
+          if (displayText.charAt(i) == '|' || displayText.charAt(i) == '\n') textLines++;
+        }
+        int textBlockHeight = textLines * rowSpacing;
+
+        // 3. CASCADE SETUP (Slider 3: paramSpeed, Slider 5: paramMulti)
+        int numLines = map(paramMulti, 0, 127, 1, 15); // Number of trailing ghosts              
+        float cascadeSpeed = 0.05 + ((paramSpeed / 127.0) * 1.45); 
+        
+        // Space out the ghosts based on the height of the entire paragraph
+        int cascadeGap = textBlockHeight; 
+        if (cascadeGap < rowSpacing) cascadeGap = rowSpacing; // Safety fallback
+
+        int totalRows = YRES / cascadeGap;
+        if (totalRows < 1) totalRows = 1; // Safety for massive text
 
         static float virtualRow = 0;
         virtualRow += cascadeSpeed;
         int headRow = (int)virtualRow % totalRows;
 
+        // 4. PULSING FREQUENCY LOGIC (Slider 4: paramShape)
+        static int flashTimer = 0;
+        bool doFlash = false;
+        
+        if (paramShape >= 10) {
+          // Map slider to a cycle length (e.g., from 180 frames down to 10 frames)
+          int cycleFrames = map(paramShape, 10, 127, 180, 10); 
+          flashTimer++;
+          if (flashTimer >= cycleFrames) {
+            doFlash = true;
+            if (flashTimer >= cycleFrames + 7) { // Hold the flash for exactly 2 frames
+              flashTimer = 0;
+            }
+          }
+        } else {
+          flashTimer = 0; // Reset timer if slider is pulled below 10
+        }
+
+        // Determine the active background color for this specific frame
+        int actualBg = doFlash ? fgColor : bgColor;
+        
+        // Override the global background for the flash
+        if (doFlash) {
+          graphics.fillRect(0, 0, XRES, YRES, actualBg);
+        }
+
+        // 5. DRAW THE TRAILS
         for (int i = 0; i < numLines; i++) {
           int drawRow = headRow - i;
           if (drawRow < 0) drawRow += totalRows;
 
-          int yPos = drawRow * rowHeight;
-          int colorIntensity = (bgColor == 54 ? 1 : 0 * 5) + (54 - (i * (54 / numLines)));
+          int yPosBase = drawRow * cascadeGap;
+          
+          // 6. CALCULATE TEXT FADE (Respecting the current background contrast)
+          int colorIntensity;
+          if (actualBg == 0) { 
+            // Black background: Text starts White (54) and fades to Black (0)
+            colorIntensity = 54 - (i * (54 / numLines));
+          } else { 
+            // White background: Text starts Black (0) and fades to White (54)
+            colorIntensity = i * (54 / numLines);
+          }
+          
+          // Clamp values to prevent graphical glitches
           if (colorIntensity > 54) colorIntensity = 54;
           if (colorIntensity < 0) colorIntensity = 0;
 
           graphics.setTextColor(colorIntensity);
-          graphics.setCursor(10, yPos);
 
-          if (paramSize > 64) {
-            int scaleFactor = map(paramSize, 64, 127, 5, 9);
-            graphics.printBig((char *)displayText.c_str(), scaleFactor);
-          } else {
-            graphics.print((char *)displayText.c_str());
+          // 7. RENDER THE MULTI-LINE BLOCK AT THIS Y-POSITION
+          int cursorY = yPosBase;
+          String tempLine = "";
+
+          for (int c_idx = 0; c_idx < displayText.length(); c_idx++) {
+            char c = displayText.charAt(c_idx);
+            
+            if (c == '|' || c == '\n') { 
+              graphics.setCursor(10, cursorY);
+              if (scaleFactor > 1) {
+                graphics.printBig((char *)tempLine.c_str(), scaleFactor);
+              } else {
+                graphics.print((char *)tempLine.c_str());
+              }
+              cursorY += rowSpacing; 
+              tempLine = ""; 
+            } else {
+              tempLine += c;
+            }
+          }
+          
+          // Print the final chunk
+          if (tempLine.length() > 0) {
+            graphics.setCursor(10, cursorY);
+            if (scaleFactor > 1) {
+              graphics.printBig((char *)tempLine.c_str(), scaleFactor);
+            } else {
+              graphics.print((char *)tempLine.c_str());
+            }
           }
         }
         break;
       }
-
     // --- SCENE C: 3D WIREFRAMES ---
     case 'C':
       {
-        // Map paramMulti perfectly to the 0-9 array index limits to prevent crashes
         int mIdx = map(paramMulti, 0, 127, 0, 9);
         if (mIdx == 0) break;
 
         static float angle = 0;
-        float speed = map(paramSpeed, 0, 127, 0, 9) * 0.005;
+        float speed = (paramSpeed / 127.0) * 0.1; // Smooth float rotation
         angle += speed;
-        int actualSize = 20 + map(paramSize, 0, 127, 0, 90);
+        int actualSize = 20 + paramSize; // Smooth size scaling
 
         int gridCols[] = { 0, 1, 2, 2, 2, 2, 3, 3, 3, 3 };
         int gridRows[] = { 0, 1, 1, 1, 2, 2, 2, 2, 2, 3 };
@@ -205,13 +271,10 @@ void draw() {
     // --- SCENE D: TUNNEL LINES ---
     case 'D':
       {
-        int numPairs = 2 + map(paramSize, 0, 127, 0, 9);                
-        float speed = map(paramSpeed, 0, 127, 1, 10) * 0.005;      
-        
-        // Use the raw 127 data for massive, buttery smooth angle rotation!
+        int numPairs = 2 + map(paramSize, 0, 127, 0, 12);                
+        float speed = 0.001 + ((paramSpeed / 127.0) * 0.049);      
         float baseAngle = (paramShape / 127.0) * PI;  
-        
-        int lineThickness = map(paramMulti, 0, 127, 1, 9);              
+        int lineThickness = map(paramMulti, 0, 127, 1, 15);              
 
         static float tunnelTime = 0;
         tunnelTime += speed;
@@ -249,7 +312,7 @@ void draw() {
         break;
       }
 
-    // --- SCENE E: WARP SPEED STARFIELD ---
+    // --- SCENE B: WARP SPEED STARFIELD ---
     case 'B':
       {
         const int MAX_STARS = 100;
@@ -268,8 +331,8 @@ void draw() {
         }
 
         int numStars = map(paramMulti, 0, 127, 10, MAX_STARS);
-        float speed = map(paramSpeed, 0, 127, 1, 10) * 0.5;
-        float maxSize = map(paramSize, 0, 127, 1, 10);
+        float speed = 0.1 + ((paramSpeed / 127.0) * 14.9);
+        float maxSize = 1.0 + ((paramSize / 127.0) * 20.0);
 
         static float tunnelRot = 0;
         tunnelRot += (paramShape - 63.5) * 0.001; 
@@ -313,48 +376,71 @@ void draw() {
         break;
       }
 
-    // --- SCENE F: WEB TEXT SCENE ---
-    // --- SCENE F: WEB TEXT SCENE (NOW MULTI-LINE CAPABLE) ---
+    // --- SCENE F: WEB TEXT SCENE (UPGRADED) ---
     case 'F':
       {
         int cursorX = 10;
-        int cursorY = 10;
         
-        // Calculate the physical height of the text based on the slider
-        int scaleFactor = (paramSize > 64) ? map(paramSize, 64, 127, 5, 9) : 1;
-        int rowSpacing = 9 * scaleFactor; // Base font is 8px high + 1px padding
+        // 1. DYNAMIC SIZE: Always scales from 1x to 9x smoothly across the 0-127 range
+        int scaleFactor = map(paramSize, 0, 127, 1, 9);
+        if (scaleFactor < 1) scaleFactor = 1; 
+        int rowSpacing = 9 * scaleFactor; // Calculate physical pixel height per line
+        
+        // 2. DYNAMIC SHADE: Map paramShape to a color intensity (0-54)
+        int textShade = map(paramShape, 0, 127, 0, 54);
+        if (bgColor == 54) textShade = 54 - textShade; // Invert to fade to black if background is white
+        graphics.setTextColor(textShade);
 
-        graphics.setCursor(cursorX, cursorY);
+        // 3. CALCULATE TEXT BLOCK HEIGHT (to figure out when it scrolls off screen)
+        int numLines = 1;
+        for (int i = 0; i < displayText.length(); i++) {
+          if (displayText.charAt(i) == '|' || displayText.charAt(i) == '\n') numLines++;
+        }
+        int totalTextHeight = numLines * rowSpacing;
+
+        // 4. SMOOTH SCROLLING & MARQUEE LOOP
+        static float textScrollY = 10;
         
+        if (paramSpeed > 10) {
+          // Calculate buttery float speed (up to 3 pixels per frame)
+          float scrollSpeed = ((paramSpeed - 10) / 117.0) * 3.0; 
+          textScrollY -= scrollSpeed; // Move UP
+          
+          // If the absolute bottom of the text block passes the top of the screen (0)
+          if (textScrollY + totalTextHeight < 0) {
+            textScrollY = YRES; // Instantly wrap around to the bottom of the CRT
+          }
+        } else {
+          // If speed is 10 or less, snap the text back to its starting anchor
+          textScrollY = 10;
+        }
+
+        // 5. RENDER THE TEXT
+        float cursorY = textScrollY;
         String tempLine = "";
         
-        // Scan the text character by character
         for (int i = 0; i < displayText.length(); i++) {
           char c = displayText.charAt(i);
           
-          if (c == '|') { 
-            // We hit a line break! Print what we have so far...
-            if (paramSize > 64) {
+          // Handle both pipe characters AND standard newlines just to be safe
+          if (c == '|' || c == '\n') { 
+            graphics.setCursor(cursorX, (int)cursorY);
+            if (scaleFactor > 1) {
               graphics.printBig((char *)tempLine.c_str(), scaleFactor);
             } else {
               graphics.print((char *)tempLine.c_str());
             }
-            
-            // ...then physically move the cursor down...
             cursorY += rowSpacing; 
-            graphics.setCursor(cursorX, cursorY);
-            
-            // ...and clear the temp line to start fresh on the new row!
             tempLine = ""; 
           } else {
-            // Keep building the line
             tempLine += c;
           }
         }
         
         // Print the final remaining chunk of text
         if (tempLine.length() > 0) {
-          if (paramSize > 64) {
+          graphics.setCursor(cursorX, (int)cursorY);
+          if (scaleFactor > 1) {
             graphics.printBig((char *)tempLine.c_str(), scaleFactor);
           } else {
             graphics.print((char *)tempLine.c_str());
