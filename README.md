@@ -1,19 +1,19 @@
 # Retro Video Synthesizer: ESP32 & Pure Data
 
-Welcome to the Retro Video Synthesizer project. This tool allows you to generate live, dynamic composite video art directly from an ESP32 microcontroller, controlled in real-time by a custom Pure Data interface. 
+Welcome to the Retro Video Synthesizer project. This tool allows you to generate live, dynamic composite video art directly from an ESP32 microcontroller, controlled in real-time by a custom Pure Data interface or by web interface. 
 
 Whether you are performing live visuals, circuit bending, or just exploring retro hardware graphics, this project provides a lightweight, highly responsive bridge between your computer and a classic CRT television and a user friendly interface for generating your visuals and syncing them to your music.
 
 ## Project Overview
 
 This system is divided into two main components:
-1. **The Hardware (ESP32):** Runs a custom C++ firmware based on Bitluni's Composite Video library. It acts as the graphics engine, rendering 3D wireframes, starfields, tunnels, and cascading text directly to a composite video signal.
+1. **The Hardware (ESP32):** Runs a custom C++ firmware based on Bitluni's Composite Video library. It acts as the graphics engine, rendering 3D wireframes, starfields, tunnels, and cascading text directly to a composite video signal. If web interface is preferred, a second esp32 is needed, in my case i used an esp32C3.
 2. **The Software (Pure Data):** Acts as the control surface. It takes your physical mouse movements (or physical MIDI controller faders) and translates them into a highly optimized stream of raw ASCII bytes sent over USB to command the ESP32 in real-time.
 
 ## Hardware Requirements
 
 To get this project running, you will need:
-* **An ESP32 Development Board:** The standard ESP32 WROOM-32 (30-pin or 38-pin) is highly recommended. 
+* **An ESP32 Development Board:** The standard ESP32 WROOM-32 (30-pin or 38-pin) is highly recommended. ESP32 C3 for server.
 * **A Composite Video Cable (RCA):** To connect the ESP32 to your screen, you need a chip version that still has the DAC (NODE MCU, WROOM 32, ...).
 * **A Display:** A vintage CRT television or any monitor with an analog composite video input.
 * **A MIDI Controller (Optional but recommended):** For tactile, hands-on control of the visual parameters.
@@ -23,7 +23,7 @@ To get this project running, you will need:
 ## Software Dependencies
 
 Before opening the files, ensure you have the following installed:
-* **Arduino IDE:** Configured for the ESP32 board manager (use the esp32 by espressif, version 2.0.0).
+* **Platform.io** .
 * **Pure Data:** The standard Vanilla version works perfectly.
 
 ## The Scenes
@@ -31,18 +31,21 @@ Before opening the files, ensure you have the following installed:
 The ESP32 is programmed with several distinct visual modes, known as Scenes. Each scene reacts differently to the sliders in Pure Data.
 
 * **Scene A (Solid Colors):** Generates full-screen solid blocks of color or grayscale.
-* **Scene B (Cascading Text):** A digital rain effect where custom text cascades down the screen.
+* **Scene B (Starfield):** A classic warp-speed 3D starfield simulation.
 * **Scene C (3D Wireframes):** Renders rotating 3D cubes, pyramids, and spheres in customizable grid layouts.
 * **Scene D (Hyper Tunnels):** Draws infinite, accelerating geometric line tunnels.
-* **Scene E (Starfield):** A classic warp-speed 3D starfield simulation.
+* **Scene E (Cascading text):** For impactant visuals.
+* **Scene F (Long text):** For long messages to display.
 
 ## How to Use the Synthesizer
 
 ### Step 1: Flash the ESP32
-1. Open the provided `.ino` file in the Arduino IDE.
-2. Ensure your board settings match your specific ESP32 model.
-3. Upload the code to the board. 
+1. Flash the code with PlatformIO
+2. Connect pins 25 to the centre pin of the RCA video plug, GND pin to the ground of the plug.
+3. For web interface use, connect together the 5v pins (VIN) of the two boards, the GND of the two boards together, connect pin 16 of the rendering board (ESP32-WROOM32) to the pin 4 of the server board (ESP32C3), and the pin 17 of the rendering board to the pin 5 of the server board.
 4. Once uploaded, connect your ESP32 to your CRT television. You should see the default startup screen.
+5. Connect to the network COMPOSITE_VIDEO_UPLINK that should pop up in your device, go to the page 192.168.4.1 and have fun with the interface! (if you cannot find the page, you probably have to disconnect your data and reload).
+6. Alternatively you can connect your puredata patch to your render board via USB, without the need of a server board.
 
 ### Step 2: Configure Pure Data
 1. Open the provided `.pd` patch.
@@ -58,18 +61,8 @@ You can now click the radio buttons in the Pure Data patch to switch between sce
 * **Shape:** Morphs the geometry (e.g., changing a cube into a pyramid, or altering the tunnel angle).
 * **Multiply:** Increases the density of the scene, such as adding more stars to the starfield or creating a larger grid of 3D shapes.
 
-### Adding wireless connection with a second server board
-If you want to use the system as possible signage, i now implemented the possibility to set the desired screen or text with several parameters and setting through wireless connection. For this you need a second esp32 (running everything on a single board makes the video very laggy).
-You need upload the code in VideoSynth_ServerC3 (I used a ESP32-C3 board) to your board of choice. To connect the two boards together, you connect the following pins:
-
-
 
 You should only power through usb ONE board, since the voltage is then passed to the other one via pins connection.
-
-You can now use your phone or laptop to interact with the scenes, turn off your data, connect to the network: COMPOSITE_SYNTH_UPLINK, go into a browser and type the following IP: 192.168.4.1
-This screen should appear:
-
-
 
 ### Adding Physical MIDI Control
 If you want to step away from the mouse and use physical hardware faders:
