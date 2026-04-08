@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap');
+        
+        :root {
+            --bg-color: transparent; /* Makes the iframe blend in */
+            --text-primary: #f2ede7;
+            --dim-text: rgba(242, 237, 231, 0.5);
+            --border-color: rgba(242, 237, 231, 0.2);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden; /* prevents scrollbars */
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .synth-flasher {
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.02);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+            position: relative;
+        }
+
+        .synth-flasher::before {
+            content: "[ ]";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: var(--dim-text);
+        }
+
+        .synth-flasher h3 {
+            font-family: 'Pixelify Sans', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .synth-flasher p {
+            font-size: 0.9rem;
+            color: var(--dim-text);
+            margin-bottom: 2rem;
+            max-width: 80%;
+        }
+
+        .retro-btn {
+            font-family: 'Courier New', Courier, monospace;
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--text-primary);
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .retro-btn:hover {
+            background: var(--text-primary);
+            color: #0a0a0a;
+        }
+
+        .board-selector {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .board-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--dim-text);
+        }
+
+        .board-option:hover { color: var(--text-primary); }
+
+        .board-option input[type="radio"] {
+            appearance: none;
+            width: 14px; height: 14px;
+            border: 1px solid var(--dim-text);
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        .board-option input[type="radio"]:checked { background: var(--text-primary); }
+        .board-option input[type="radio"]:checked + span { color: var(--text-primary); }
+        
+        esp-web-install-button { display: block; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="synth-flasher">
+        <h3>COMPOSITE VIDEO SYNTH // FIRMWARE UPLINK</h3>
+        <p>Select target hardware and connect via USB. Compatible with Chromium-based browsers only.</p>
+        
+        <div class="board-selector">
+            <label class="board-option">
+                <input type="radio" name="board" value="./CompositeVideoSynthBinary/firmware_mainboard.bin.txt" checked>
+                <span>[ MAIN_BOARD ]</span>
+            </label>
+            <label class="board-option">
+                <input type="radio" name="board" value="./CompositeVideoSynthBinary/firmware_serverboard.bin.txt">
+                <span>[ SERVER_BOARD ]</span>
+            </label>
+        </div>
+
+        <script type="module" src="https://unpkg.com/esp-web-tools@9.4.2/dist/web/install-button.js?module"></script>
+        <esp-web-install-button id="flasher-btn" manifest="./CompositeVideoSynthBinary/manifest.json">
+            <button slot="activate" class="retro-btn">INITIALIZE_FLASH</button>
+        </esp-web-install-button>
+    </div>
+
+    <script>
+        document.querySelectorAll('input[name="board"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const btn = document.getElementById('flasher-btn');
+                if (btn) btn.setAttribute('manifest', e.target.value);
+            });
+        });
+    </script>
+</body>
+</html>
