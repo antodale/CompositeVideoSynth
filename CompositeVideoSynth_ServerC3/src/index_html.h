@@ -144,7 +144,7 @@ const char* htmlPage = R"rawliteral(
 
     <div class="text-input-area" id="textInputArea">
       <div class="section-label">// TRANSMISSION DATA</div>
-      <textarea placeholder="ENTER TEXT..." maxlength="200" id="transmissionText"></textarea>
+      <textarea placeholder="ENTER TEXT..." maxlength="2048" id="transmissionText"></textarea>
     </div>
 
     <div class="sliders-section">

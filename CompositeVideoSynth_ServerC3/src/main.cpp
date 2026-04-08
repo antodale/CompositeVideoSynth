@@ -14,7 +14,7 @@ void setup() {
   // Start the laptop debugging Serial (USB CDC)
   Serial.begin(115200);
   delay(3000);  // Crucial for the C3: give the native USB time to wake up
-  Serial1.begin(115200, SERIAL_8N1, RX_PIN, TX_PIN);
+  Serial1.begin(460800, SERIAL_8N1, RX_PIN, TX_PIN);
   
   Serial.println("\n--- C3 Web Server Booting ---");
   

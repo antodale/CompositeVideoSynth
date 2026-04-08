@@ -1,0 +1,30 @@
+# --- PlatformIO Core ---
+.pio/
+.pioenvs/
+.piolibdeps/
+libdeps/
+
+# --- VS Code Workspace ---
+.vscode/
+*.code-workspace
+
+# --- Compiled Firmware & Build Artifacts ---
+*.bin
+*.elf
+*.hex
+*.map
+*.o
+*.a
+
+# --- OS Generated Files (Mac & Windows) ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Python / Scripts (Just in case) ---
+__pycache__/
+*.pyc

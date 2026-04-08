@@ -39,7 +39,7 @@ void compositeCore(void *data);
 void setup() {
   Serial.begin(115200);
   Serial.println("ESP32 Composite Video Started!");
-  Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
+  Serial2.begin(460800, SERIAL_8N1, RXD2, TXD2);
   
   esp_pm_lock_handle_t powerManagementLock;
   esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "compositeCorePerformanceLock", &powerManagementLock);
