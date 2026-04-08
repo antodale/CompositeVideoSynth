@@ -1,0 +1,27 @@
+{
+  "name": "Composite Video Synth - Server Board",
+  "version": "1.0",
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "bootloader_c3.bin",
+          "offset": 0
+        },
+        {
+          "path": "partitions_c3.bin",
+          "offset": 32768
+        },
+        {
+          "path": "boot_app0.bin",
+          "offset": 57344
+        },
+        {
+          "path": "firmware_c3.bin",
+          "offset": 65536
+        }
+      ]
+    }
+  ]
+}
