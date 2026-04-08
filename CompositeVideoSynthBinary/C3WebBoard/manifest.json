@@ -18,7 +18,7 @@
           "offset": 57344
         },
         {
-          "path": "firmware_serverboard.bin",
+          "path": "firmware.bin",
           "offset": 65536
         }
       ]
