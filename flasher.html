@@ -4,15 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>reboot_the_rise_of_the_robots // tools</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap');
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
 
-:root {
-            --bg-color: transparent;
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
             --text-primary: #f2ede7;
+            --accent-color: #f2ede7;
             --dim-text: rgba(242, 237, 231, 0.5);
             --border-color: rgba(242, 237, 231, 0.2);
-            color-scheme: dark; /* Add this line right here! */
+            color-scheme: dark;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -126,12 +130,10 @@
             color: var(--dim-text);
             text-decoration: none;
             font-size: 0.9rem;
-            /*transition: color 0.3s ease, text-shadow 0.3s ease;*/
         }
 
         .top-nav a:hover {
             color: var(--text-primary);
-            /*text-shadow: 0 0 10px rgba(242, 237, 231, 0.8);*/
         }
 
         /* --- MAIN CONTENT --- */
@@ -216,7 +218,7 @@
             max-width: 80%;
         }
 
-        /* --- CUSTOM FLASH BUTTON & SELECTOR --- */
+        /* --- CUSTOM FLASH BUTTON --- */
         .retro-btn {
             font-family: 'Mono', monospace;
             background: transparent;
@@ -235,51 +237,10 @@
             color: var(--bg-color);
         }
 
-        /* .board-selector {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-            font-family: 'Mono', monospace;
-        } */
-
-        /* .board-option {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            color: var(--dim-text);
-            transition: color 0.2s;
-        } */
-
-        /* .board-option:hover {
-            color: var(--text-primary);
-        }
-
-        .board-option input[type="radio"] {
-            appearance: none;
-            -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            border: 1px solid var(--dim-text);
-            margin-right: 8px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .board-option input[type="radio"]:checked {
-            background: var(--text-primary);
-            border-color: var(--text-primary);
-        }
-
-        .board-option input[type="radio"]:checked + span {
-            color: var(--text-primary);
-        } */
-
-        /* Web component specific overrides if needed to match theme */
+        /* Web component specific overrides */
         esp-web-install-button {
             display: block;
             margin-top: 1rem;
-            /* Note: Internal styling of the button is controlled by the shadow DOM of the component */
         }
 
         @media (max-width: 768px) {
@@ -320,8 +281,6 @@
             50% { opacity: 1; }
             100% { opacity: 0.4; }
         }
-
-
     </style>
 </head>
 <body>
@@ -335,7 +294,6 @@
     </div>
 
     <div class="content-wrapper">
-        <!-- TOP NAVIGATION -->
         <nav class="top-nav">
             <a href="/tools">/tools</a>
             <a href="/index">/home</a>
@@ -354,21 +312,8 @@
             
             <div class="synth-flasher">
                 <h3>COMPOSITE VIDEO SYNTH // FIRMWARE UPLINK</h3>
-                <p>Select target hardware and connect via USB. Compatible with Chromium-based browsers only.</p>
+                <p>Connect target hardware via USB. Compatible with Chromium-based browsers only.</p>
                 
-                <!-- Board Selection UI -->
-                <!-- <div class="board-selector">
-                    <label class="board-option">
-                        <input type="radio" name="board" value="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/firmware_mainboard.bin" checked>
-                        <span>[ MAIN_BOARD // ESP32-WROOM32 ]</span>
-                    </label>
-                    <label class="board-option">
-                        <input type="radio" name="board" value="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/firmware_serverboard.bin">
-                        <span>[ SERVER_BOARD // ESP32-C3]</span>
-                    </label>
-                </div> -->
-                
-                <!-- ESP Web Tools Component -->
                 <script type="module" src="https://unpkg.com/esp-web-tools@9.4.2/dist/web/install-button.js?module"></script>
                 <esp-web-install-button id="flasher-btn" manifest="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/manifest.json">
                     <button slot="activate" class="retro-btn">INITIALIZE_FLASH</button>
@@ -403,16 +348,6 @@
             const x = e.clientX / window.innerWidth;
             const y = e.clientY / window.innerHeight;
             document.querySelector('.grid-overlay').style.transform = `translate(${x * 10}px, ${y * 10}px)`;
-        });
-
-        // Board Selector Logic
-        document.querySelectorAll('input[name="board"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const btn = document.getElementById('flasher-btn');
-                if (btn) {
-                    btn.setAttribute('manifest', e.target.value);
-                }
-            });
         });
     </script>
 
