@@ -2,25 +2,181 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>reboot_the_rise_of_the_robots // tools</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap');
-        
+
         :root {
-            --bg-color: transparent; /* Makes the iframe blend in */
+            --bg-color: #0a0a0a;
             --text-primary: #f2ede7;
+            --accent-color: #f2ede7; /* Stripped the green for pure B&W */
             --dim-text: rgba(242, 237, 231, 0.5);
             --border-color: rgba(242, 237, 231, 0.2);
+            --scanline-opacity: 0.05;
         }
-        
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
+        @font-face {
+            font-family: 'Mono';
+            src: local('Courier New'), local('Courier'), monospace;
+        }
+
         body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Mono', monospace;
             background: var(--bg-color);
             color: var(--text-primary);
-            overflow: hidden; /* prevents scrollbars */
+            line-height: 1.4;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            position: relative;
+        }
+
+        /* --- SPINNING RAYS --- */
+        .rays-tl {
+            position: absolute;
+            top: -125px;
+            left: -125px;
+            width: 375px; 
+            height: 375px;
+            z-index: 0;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        .rays-tl::before {
+            content: "";
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 750px; height: 750px;
+            transform: translate(-50%, -50%);
+            background: repeating-conic-gradient(from 0deg, var(--text-primary) 0deg 0.5deg, transparent 0.5deg 3deg);
+            border-radius: 50%;
+            mask-image: radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%);
+            -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%);
+            animation: spin-slow 40s linear infinite;
+        }
+
+        .sunburst {
+            position: absolute;
+            bottom: -150px; 
+            left: -150px;
+            width: 500px; 
+            height: 500px;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.1;
+        }
+        .sunburst::before {
+            content: "";
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 1125px; height: 1125px; 
+            transform: translate(-50%, -50%);
+            background: repeating-conic-gradient(from 0deg, var(--accent-color) 0deg 1deg, transparent 1deg 3deg);
+            border-radius: 50%;
+            mask-image: radial-gradient(circle, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 90%);
+            -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 90%);
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes spin { 
+            from { transform: translate(-50%, -50%) rotate(0deg); } 
+            to { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
+        @keyframes spin-slow { 
+            from { transform: translate(-50%, -50%) rotate(0deg); } 
+            to { transform: translate(-50%, -50%) rotate(-360deg); } 
+        }
+
+        /* --- LAYOUT DECORATIONS --- */
+        .grid-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(circle, var(--border-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .system-meta {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            font-size: 0.7rem;
+            color: var(--dim-text);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        /* --- NAVIGATION --- */
+        .top-nav {
+            width: 100%;
             display: flex;
             justify-content: flex-end;
+            gap: 2rem;
+            margin-bottom: 4rem;
+            padding-top: 0.5rem;
+        }
+
+        .top-nav a {
+            color: var(--dim-text);
+            text-decoration: none;
+            font-size: 0.9rem;
+            /*transition: color 0.3s ease, text-shadow 0.3s ease;*/
+        }
+
+        .top-nav a:hover {
+            color: var(--text-primary);
+            /*text-shadow: 0 0 10px rgba(242, 237, 231, 0.8);*/
+        }
+
+        /* --- MAIN CONTENT --- */
+        .content-wrapper {
+            max-width: 1000px;
+            width: 100%;
+            margin-left: auto;
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        header {
+            margin-bottom: 5rem;
+            text-align: right;
+        }
+
+        .glitch-title {
+            font-family: 'Pixelify Sans', sans-serif;
+            font-size: clamp(1rem, 3vw, 2.5rem);
+            font-weight: 700;
+            text-transform: lowercase;
+            line-height: 1.5;
+            letter-spacing: -1px;
+            position: relative;
+        }
+
+        .section-tag {
+            font-size: 0.8rem;
+            color: var(--dim-text);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        /* --- TOOLS SECTION --- */
+        .tools-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            margin-bottom: 4rem;
+            flex-grow: 1;
         }
 
         .synth-flasher {
@@ -51,6 +207,7 @@
             margin-bottom: 0.5rem;
             color: var(--text-primary);
             font-weight: 700;
+            text-transform: uppercase;
         }
 
         .synth-flasher p {
@@ -60,8 +217,9 @@
             max-width: 80%;
         }
 
+        /* --- CUSTOM FLASH BUTTON & SELECTOR --- */
         .retro-btn {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Mono', monospace;
             background: transparent;
             color: var(--text-primary);
             border: 1px solid var(--text-primary);
@@ -70,17 +228,19 @@
             text-transform: uppercase;
             font-size: 1rem;
             transition: all 0.2s ease;
+            letter-spacing: 1px;
         }
 
-        .retro-btn:hover {
+        .retro-btn:hover, .retro-btn:active {
             background: var(--text-primary);
-            color: #0a0a0a;
+            color: var(--bg-color);
         }
 
         .board-selector {
             display: flex;
             gap: 1.5rem;
             margin-bottom: 2rem;
+            font-family: 'Mono', monospace;
         }
 
         .board-option {
@@ -88,52 +248,174 @@
             align-items: center;
             cursor: pointer;
             color: var(--dim-text);
+            transition: color 0.2s;
         }
 
-        .board-option:hover { color: var(--text-primary); }
+        .board-option:hover {
+            color: var(--text-primary);
+        }
 
         .board-option input[type="radio"] {
             appearance: none;
-            width: 14px; height: 14px;
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
             border: 1px solid var(--dim-text);
             margin-right: 8px;
+            position: relative;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        .board-option input[type="radio"]:checked { background: var(--text-primary); }
-        .board-option input[type="radio"]:checked + span { color: var(--text-primary); }
-        
-        esp-web-install-button { display: block; margin-top: 1rem; }
+
+        .board-option input[type="radio"]:checked {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+        }
+
+        .board-option input[type="radio"]:checked + span {
+            color: var(--text-primary);
+        }
+
+        /* Web component specific overrides if needed to match theme */
+        esp-web-install-button {
+            display: block;
+            margin-top: 1rem;
+            /* Note: Internal styling of the button is controlled by the shadow DOM of the component */
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper { align-items: stretch; }
+            .top-nav { justify-content: flex-start; flex-wrap: wrap; gap: 1rem; }
+            header { text-align: left; }
+            .tools-container { align-items: stretch; }
+            .synth-flasher { align-items: flex-start; text-align: left; }
+            .synth-flasher p { max-width: 100%; }
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 2rem;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 0.75rem;
+            color: var(--dim-text);
+        }
+
+        .status-pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            margin-right: 5px;
+            box-shadow: 0 0 10px var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+
     </style>
 </head>
 <body>
-    <div class="synth-flasher">
-        <h3>COMPOSITE VIDEO SYNTH // FIRMWARE UPLINK</h3>
-        <p>Select target hardware and connect via USB. Compatible with Chromium-based browsers only.</p>
-        
-        <div class="board-selector">
-            <label class="board-option">
-                <input type="radio" name="board" value="./CompositeVideoSynthBinary/firmware_mainboard.bin.txt" checked>
-                <span>[ MAIN_BOARD ]</span>
-            </label>
-            <label class="board-option">
-                <input type="radio" name="board" value="./CompositeVideoSynthBinary/firmware_serverboard.bin.txt">
-                <span>[ SERVER_BOARD ]</span>
-            </label>
-        </div>
 
-        <script type="module" src="https://unpkg.com/esp-web-tools@9.4.2/dist/web/install-button.js?module"></script>
-        <esp-web-install-button id="flasher-btn" manifest="./CompositeVideoSynthBinary/manifest.json">
-            <button slot="activate" class="retro-btn">INITIALIZE_FLASH</button>
-        </esp-web-install-button>
+    <div class="rays-tl"></div>
+    <div class="sunburst"></div>
+    <div class="grid-overlay"></div>
+    
+    <div class="system-meta">
+        status: <span id="current-time">00:00:00</span>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- TOP NAVIGATION -->
+        <nav class="top-nav">
+            <a href="/tools">/tools</a>
+            <a href="/index">/home</a>
+            <a href="/about_me">/about_me</a>
+            <a href="https://github.com/antodale" target="_blank" rel="noopener noreferrer">/projects</a>
+        </nav>
+
+        <header>
+            <h1 class="glitch-title">
+                reboot_the<br>_rise_of_<br>the_robots
+            </h1>
+        </header>
+
+        <main class="tools-container">
+            <span class="section-tag" style="text-align: right; width: 100%; margin-bottom: 1.5rem;">[ DEPLOYMENT_MODULES ]</span>
+            
+            <div class="synth-flasher">
+                <h3>COMPOSITE VIDEO SYNTH // FIRMWARE UPLINK</h3>
+                <p>Select target hardware and connect via USB. Compatible with Chromium-based browsers only.</p>
+                
+                <!-- Board Selection UI -->
+                <div class="board-selector">
+                    <label class="board-option">
+                        <input type="radio" name="board" value="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/firmware_mainboard.bin.txt" checked>
+                        <span>[ MAIN_BOARD // ESP32-WROOM32 ]</span>
+                    </label>
+                    <label class="board-option">
+                        <input type="radio" name="board" value="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/firmware_serverboard.bin.txt">
+                        <span>[ SERVER_BOARD // ESP32-C3]</span>
+                    </label>
+                </div>
+
+                <!-- ESP Web Tools Component -->
+                <script type="module" src="https://unpkg.com/esp-web-tools@9.4.2/dist/web/install-button.js?module"></script>
+                <esp-web-install-button id="flasher-btn" manifest="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/manifest.json">
+                    <button slot="activate" class="retro-btn">INITIALIZE_FLASH</button>
+                </esp-web-install-button>
+            </div>
+        </main>
+
+        <footer>
+            <div>
+                <span class="status-pulse"></span> SYSTEM ACTIVE // OUTPUT ENABLED
+            </div>
+            <div style="text-align: right; max-width: 400px;">
+                &copy; 2025 REBOOT_THE_ROBOT // VERSION 2.0.4
+            </div>
+        </footer>
     </div>
 
     <script>
+        // Real-time clock for the system meta
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
+                            now.getMinutes().toString().padStart(2, '0') + ":" + 
+                            now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('current-time').textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Subtle parallax effect on the grid
+        window.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            document.querySelector('.grid-overlay').style.transform = `translate(${x * 10}px, ${y * 10}px)`;
+        });
+
+        // Board Selector Logic
         document.querySelectorAll('input[name="board"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 const btn = document.getElementById('flasher-btn');
-                if (btn) btn.setAttribute('manifest', e.target.value);
+                if (btn) {
+                    btn.setAttribute('manifest', e.target.value);
+                }
             });
         });
     </script>
+
 </body>
 </html>
