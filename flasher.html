@@ -218,7 +218,7 @@
             max-width: 80%;
         }
 
-        /* --- CUSTOM FLASH BUTTON --- */
+        /* --- CUSTOM FLASH BUTTON & SELECTOR --- */
         .retro-btn {
             font-family: 'Mono', monospace;
             background: transparent;
@@ -237,6 +237,46 @@
             color: var(--bg-color);
         }
 
+        .board-selector {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            font-family: 'Mono', monospace;
+        }
+
+        .board-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--dim-text);
+            transition: color 0.2s;
+        }
+
+        .board-option:hover {
+            color: var(--text-primary);
+        }
+
+        .board-option input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--dim-text);
+            margin-right: 8px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .board-option input[type="radio"]:checked {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+        }
+
+        .board-option input[type="radio"]:checked + span {
+            color: var(--text-primary);
+        }
+
         /* Web component specific overrides */
         esp-web-install-button {
             display: block;
@@ -250,6 +290,7 @@
             .tools-container { align-items: stretch; }
             .synth-flasher { align-items: flex-start; text-align: left; }
             .synth-flasher p { max-width: 100%; }
+            .board-selector { flex-direction: column; gap: 1rem; align-items: flex-start; }
         }
 
         /* --- FOOTER --- */
@@ -312,10 +353,21 @@
             
             <div class="synth-flasher">
                 <h3>COMPOSITE VIDEO SYNTH // FIRMWARE UPLINK</h3>
-                <p>Connect target hardware via USB. Compatible with Chromium-based browsers only.</p>
+                <p>Select target hardware and connect via USB. Compatible with Chromium-based browsers only.</p>
                 
+                <div class="board-selector">
+                    <label class="board-option">
+                        <input type="radio" name="board" value="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/MainBoard/manifest.json" checked>
+                        <span>[ MAIN_BOARD // ESP32-WROOM ]</span>
+                    </label>
+                    <label class="board-option">
+                        <input type="radio" name="board" value="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/C3WebBoard/manifest.json">
+                        <span>[ SERVER_BOARD // ESP32-C3 ]</span>
+                    </label>
+                </div>
+
                 <script type="module" src="https://unpkg.com/esp-web-tools@9.4.2/dist/web/install-button.js?module"></script>
-                <esp-web-install-button id="flasher-btn" manifest="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/manifest.json">
+                <esp-web-install-button id="flasher-btn" manifest="https://antodale.github.io/CompositeVideoSynth/CompositeVideoSynthBinary/MainBoard/manifest.json">
                     <button slot="activate" class="retro-btn">INITIALIZE_FLASH</button>
                 </esp-web-install-button>
             </div>
@@ -348,6 +400,16 @@
             const x = e.clientX / window.innerWidth;
             const y = e.clientY / window.innerHeight;
             document.querySelector('.grid-overlay').style.transform = `translate(${x * 10}px, ${y * 10}px)`;
+        });
+
+        // Board Selector Logic
+        document.querySelectorAll('input[name="board"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const btn = document.getElementById('flasher-btn');
+                if (btn) {
+                    btn.setAttribute('manifest', e.target.value);
+                }
+            });
         });
     </script>
 
