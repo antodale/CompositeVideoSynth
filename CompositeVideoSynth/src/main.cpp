@@ -5,7 +5,7 @@
 #include <CompositeGraphics.h>  // In the 'lib' folder -> Angle brackets
 #include <CompositeOutput.h>    // In the 'lib' folder -> Angle brackets
 #include "font6x8.h"            // Local file in 'src' -> Quotes
-
+#include <Preferences.h>
 #define RXD2 16 // Connect the C3's TX pin to this pin!
 #define TXD2 17 // (We won't actually send anything back to the C3)
 
@@ -13,8 +13,8 @@
 //NTSC MAX, half: 324x224 full: 648x448
 const int XRES = 320;
 const int YRES = 225;
-String displayText = "REBOOT_\nTHE_RISE\n_OF_THE_\nROBOTS";
-
+String displayText = "REBOOT_\nTHE_dick\n_OF_THE_\nROBOTS";
+Preferences preferences;
 //Graphics using the defined resolution for the backbuffer
 CompositeGraphics graphics(XRES, YRES);
 CompositeOutput composite(CompositeOutput::NTSC, XRES * 2, YRES * 2);
@@ -22,6 +22,7 @@ Font<CompositeGraphics> font(6, 8, font6x8::pixels);
 
 #include <soc/rtc.h>
 char currentScene = 'F';
+String currentPayload = "";
 
 // --- NOW ACCEPTING 0 to 127 ---
 int paramBg = 0;     
@@ -37,7 +38,7 @@ int scene = 0;
 void compositeCore(void *data);
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(460800);
   Serial.println("ESP32 Composite Video Started!");
   Serial2.begin(460800, SERIAL_8N1, RXD2, TXD2);
   
@@ -49,6 +50,8 @@ void setup() {
   graphics.init();
   graphics.setFont(font);
 
+  preferences.begin("synth_mem", false);
+
   xTaskCreatePinnedToCore(compositeCore, "compositeCoreTask", 1024, NULL, 1, NULL, 0);
 }
 
@@ -58,32 +61,81 @@ void compositeCore(void *data) {
   }
 }
 
+void applyState(const String& payload) {
+  // If the payload somehow got mangled and is too short, abort to prevent a crash
+  if (payload.length() < 16) return; 
+
+  currentScene = payload.charAt(0);
+  int len = payload.length();
+  int s1Start = len - 15;
+
+  if (s1Start > 1) {
+    displayText = payload.substring(1, s1Start);
+  }
+
+  paramBg    = payload.substring(s1Start, s1Start + 3).toInt();
+  paramSize  = payload.substring(s1Start + 3, s1Start + 6).toInt();
+  paramSpeed = payload.substring(s1Start + 6, s1Start + 9).toInt();
+  paramShape = payload.substring(s1Start + 9, s1Start + 12).toInt();
+  paramMulti = payload.substring(s1Start + 12, s1Start + 15).toInt();
+}
+
 // --- THE NEW FIXED-LENGTH PARSER ---
 void handleSerial() {
-  if (Serial2.available() > 0) {
-    String input = Serial2.readStringUntil('\n');
+  String input = "";
+
+  // 1. Check direct USB connection (Web MIDI / Laptop) first
+  if (Serial.available() > 0) {
+    input = Serial.readStringUntil('\n');
+  }
+  // 2. If nothing on USB, check the C3 Wi-Fi Uplink (Serial2)
+  else if (Serial2.available() > 0) {
+    input = Serial2.readStringUntil('\n');
+  }
+
+  // 3. If we caught a message from EITHER port, process it!
+  if (input.length() > 0) {
     input.trim();
     int len = input.length();
 
     // The shortest possible valid packet (Mode + 5 padded sliders) is 16 chars.
+    // This handles the encoded video commands 
     if (len >= 16) {
-      currentScene = input.charAt(0);
-      int s1Start = len - 15;
+      // *Crucial Note*: Make sure you update currentPayload here so your Save commands work!
+      currentPayload = input; 
+      applyState(currentPayload);
+      // Warning: If you are sending data TO the board via Serial (USB), 
+      // printing this back out might cause a feedback loop in your Javascript app!
+      // You may want to comment this out if using the Web MIDI tool.
+      Serial.print("message received: "); Serial.println(input);
+    }
+    
+    // This handles the serial control commands (load and display)
+    else if (len == 2) {
+      char command = input.charAt(0);
+      String slot = String(input.charAt(1));
+      String key = "p" + slot; // Creates memory keys like "p1", "p2"
 
-      if (s1Start > 1) {
-        displayText = input.substring(1, s1Start);
+      // [ SAVE COMMAND ]
+      if (command == 'S' || command == 's') {
+        // Burn the currently active payload into the requested flash memory slot
+        preferences.putString(key.c_str(), currentPayload);
+        Serial.println("--- PRESET SAVED TO SLOT " + slot + " ---");
       }
-
-      paramBg    = input.substring(s1Start, s1Start + 3).toInt();
-      paramSize  = input.substring(s1Start + 3, s1Start + 6).toInt();
-      paramSpeed = input.substring(s1Start + 6, s1Start + 9).toInt();
-      paramShape = input.substring(s1Start + 9, s1Start + 12).toInt();
-      paramMulti = input.substring(s1Start + 12, s1Start + 15).toInt();
-
-      Serial.print("message recieved: "); Serial.println(input);
-      Serial.print("TEXT: "); Serial.println(displayText);
-      Serial.printf("SLIDERS: Bg:%d, Size:%d, Spd:%d, Shp:%d, Mlt:%d\n", 
-                     paramBg, paramSize, paramSpeed, paramShape, paramMulti);
+      
+      // [ LOAD COMMAND ]
+      else if (command == 'L' || command == 'l') {
+        // Retrieve the payload from flash memory
+        String loadedPayload = preferences.getString(key.c_str(), "");
+        
+        if (loadedPayload.length() >= 16) {
+          currentPayload = loadedPayload;
+          applyState(currentPayload); // Instantly draw the saved scene
+          Serial.println("--- PRESET LOADED FROM SLOT " + slot + " ---");
+        } else {
+          Serial.println("--- ERROR: SLOT " + slot + " IS EMPTY ---");
+        }
+      }
     }
   }
 }

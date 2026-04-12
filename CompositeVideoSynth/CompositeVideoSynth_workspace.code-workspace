@@ -1,11 +1,11 @@
 {
 	"folders": [
 		{
-			"path": ".."
+			"path": "../../../../Desktop/PROGETTI/Catodici/crt_experiments"
 		},
 		{
 			"name": "CompositeVideoSynth",
-			"path": "../../../../../Documents/PlatformIO/Projects/CompositeVideoSynth"
+			"path": "."
 		}
 	],
 	"settings": {}
