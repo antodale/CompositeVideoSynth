@@ -1,20 +1,23 @@
 # Retro Video Synthesizer: ESP32 & Pure Data
 
-Welcome to the Retro Video Synthesizer project. This tool allows you to generate live, dynamic composite video art directly from an ESP32 microcontroller, controlled in real-time by a custom Pure Data interface or by web interface. 
+Welcome to the Retro Video Synthesizer project. This tool allows you to generate live, dynamic composite video art directly from an ESP32 microcontroller, controlled in real-time by a web interface over cable (with mappable MIDI) or wifi. 
 
-Whether you are performing live visuals, circuit bending, or just exploring retro hardware graphics, this project provides a lightweight, highly responsive bridge between your computer and a classic CRT television and a user friendly interface for generating your visuals and syncing them to your music.
+Whether you are performing live visuals, circuit bending, or just exploring retro hardware graphics, this project provides a lightweight, highly responsive bridge between your computer and a classic CRT television and a user friendly interface for generating your visuals.
+
+You can find the necessary links for flashing the firmware and using the device at: https://reboot-the-rise-of-the-robots.neocities.org/tools
 
 ## Project Overview
 
 This system is divided into two main components:
 1. **The Hardware (ESP32):** Runs a custom C++ firmware based on Bitluni's Composite Video library. It acts as the graphics engine, rendering 3D wireframes, starfields, tunnels, and cascading text directly to a composite video signal. If web interface is preferred, a second esp32 is needed, in my case i used an esp32C3.
-2. **The Software (Pure Data):** Acts as the control surface. It takes your physical mouse movements (or physical MIDI controller faders) and translates them into a highly optimized stream of raw ASCII bytes sent over USB to command the ESP32 in real-time.
+2. **The Software (html page):** Acts as the control surface. It takes your mouse/keyboard inputs (or physical MIDI controller faders) and translates them into a stream of raw ASCII bytes sent over USB to command the ESP32 in real-time.
 
 ## Hardware Requirements
 
 To get this project running, you will need:
-* **An ESP32 Development Board:** The standard ESP32 WROOM-32 (30-pin or 38-pin) is highly recommended. ESP32 C3 for server.
-* **A Composite Video Cable (RCA):** To connect the ESP32 to your screen, you need a chip version that still has the DAC (NODE MCU, WROOM 32, ...).
+* **An ESP32 Development Board:** The standard ESP32 WROOM-32 (30-pin or 38-pin) is highly recommended, you need a dual core module.
+* **A second ESP32 Dev Board for wireless communication:** not necessary, just for the communication over wifi, i used a esp32 C3.
+* **A Composite Video Cable (RCA):** To connect the ESP32 to your screen.
 * **A Display:** A vintage CRT television or any monitor with an analog composite video input.
 * **A MIDI Controller (Optional but recommended):** For tactile, hands-on control of the visual parameters.
 
@@ -81,10 +84,13 @@ To ensure maximum speed and prevent memory crashes on the ESP32, this project by
 
 The format is:
 A: first position is a letter that indicates the scene (A to E)
-0: Size
-0: Speed
-0: Shape
-0: Multiplication
+TEXT: here you would put text for the scenes E and F
+000: Size
+000: Speed
+000: Shape
+000: Multiplication
+
+Numerical values need to be 3-padded, in order to be recognised correctly.
 
 For example, selecting Scene A and moving the sliders generates a raw six-byte array (like `65 48 54 51 48 49`). This allows the ESP32 to instantly read the hardware buffer without needing to parse complex text delimiters, ensuring a buttery-smooth framerate on your CRT.
 
