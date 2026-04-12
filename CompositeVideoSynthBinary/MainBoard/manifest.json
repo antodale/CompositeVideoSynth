@@ -1,6 +1,6 @@
 {
   "name": "Composite Video Synth",
-  "version": "1.0.3",
+  "version": "1.2.0",
   "builds": [
     {
       "chipFamily": "ESP32",
